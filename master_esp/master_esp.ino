@@ -16,6 +16,13 @@ const char *serverPost = "http://app.spairum.my.id/transfer/post/proto";
 const char *serverGet = "http://app.spairum.my.id/transfer/get/proto";
 const char *serverPostMesin = "http://app.spairum.my.id/mesin/edit/proto";
 
+#define echoPin D4 // attach pin D2 Arduino to pin Echo of HC-SR04
+#define trigPin D3 //attach pin D3 Arduino to pin Trig of HC-SR04
+
+// defines variables
+long duration; // variable for the duration of sound wave travel
+int distance;  // variable for the distance measurement
+
 SoftwareSerial linkSerial(D6, D5); // (Rx, Tx)
 
 int data1;
@@ -29,10 +36,12 @@ void setup()
 
     Serial.begin(115200);
     linkSerial.begin(115200);
+    pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
+    pinMode(echoPin, INPUT);  // Sets the echoPin as an INPUT
 
     WiFiManager wifiManager;
     wifiManager.autoConnect("Spairum DWS");
-    Serial.println("connected...yeey :)"); 
+    Serial.println("connected...yeey :)");
     Serial.println("Connecting");
 
     Serial.println("");
@@ -72,10 +81,24 @@ void loop()
                 linkSerial.read();
         }
     }
-    
+
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+    // Sets the trigPin HIGH (ACTIVE) for 10 microseconds
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+    // Reads the echoPin, returns the sound wave travel time in microseconds
+    duration = pulseIn(echoPin, HIGH);
+    // Calculating the distance
+    distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
+    // Mehitung Ketingan dan volume
+    // unsigned int Liter = 0;
+    // Liter = Luas - (P * L * distance)
+
     String httpRequestMesin, isi, indikator;
     indikator = ind;
-    isi = KG;
+    isi = distance;
     httpRequestMesin = "isi=" + isi + "&indikator=" + indikator;
 
     HTTPClient httpMp; //Declare object of class HTTPClient
