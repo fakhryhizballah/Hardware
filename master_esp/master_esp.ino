@@ -8,13 +8,18 @@
 #include <WiFiManager.h>
 
 #include <ArduinoJson.h>
+#include <Arduino_JSON.h>
+
 #include <SoftwareSerial.h>
 #include <Wire.h>
+
+#include <PubSubClient.h>
+#include "EspMQTTClient.h"
 
 int Led_OnBoard = 2;
 const char *serverPost = "http://app.spairum.my.id/transfer/post/proto";
 const char *serverGet = "http://app.spairum.my.id/transfer/get/proto";
-const char *serverPostMesin = "http://app.spairum.my.id/mesin/edit/proto";
+// const char *serverPostMesin = "http://app.spairum.my.id/mesin/edit/proto";
 
 #define echoPin D4 // attach pin D2 Arduino to pin Echo of HC-SR04
 #define trigPin D3 //attach pin D3 Arduino to pin Trig of HC-SR04
@@ -24,6 +29,14 @@ long duration; // variable for the duration of sound wave travel
 int distance;  // variable for the distance measurement
 
 SoftwareSerial linkSerial(D6, D5); // (Rx, Tx)
+
+EspMQTTClient client(
+    "ws.spairum.my.id", // MQTT Broker server ip
+    1883,               // The MQTT port, default to 1883. this line can be omitted
+    "spairum",          // Can be omitted if not needed MQTTUsername
+    "broker",           // Can be omitted if not needed MQTTPassword
+    "TestClient"        // Client name that uniquely identify your device
+);
 
 int data1;
 
@@ -40,7 +53,7 @@ void setup()
     pinMode(echoPin, INPUT);  // Sets the echoPin as an INPUT
 
     WiFiManager wifiManager;
-    wifiManager.autoConnect("Spairum DWS");
+    wifiManager.autoConnect("Spairum1");
     Serial.println("connected...yeey :)");
     Serial.println("Connecting");
 
@@ -52,11 +65,37 @@ void setup()
     digitalWrite(Led_OnBoard, HIGH);
     delay(2000);
     StaticJsonDocument<500> doc;
+
+    client.enableDebuggingMessages();                           // Enable debugging messages sent to serial output
+    client.enableHTTPWebUpdater();                              // Enable the web updater. User and password default to values of MQTTUsername and MQTTPassword. These can be overrited with enableHTTPWebUpdater("user", "password").
+    client.enableLastWillMessage("Test", "I am going offline"); // You can activate the retain flag by setting the third parameter to true
+}
+
+void onConnectionEstablished()
+{
+    // Subscribe to "mytopic/test" and display received message to Serial
+    client.subscribe("arSpairumRX", [](const String &payload) {
+        Serial.println(payload);
+    });
+
+    //  // Subscribe to "mytopic/wildcardtest/#" and display received message to Serial
+    //  client.subscribe("mytopic/wildcardtest/#", [](const String & topic, const String & payload) {
+    //    Serial.println("(From wildcard) topic: " + topic + ", payload: " + payload);
+    //  });
+
+    // Publish a message to "mytopic/test"
+    client.publish("arSpairum", "Spairum proto connect"); // You can activate the retain flag by setting the third parameter to true
+
+    // Execute delayed instructions
+    // client.executeDelayed(5 * 1000, []() {
+    //     client.publish("mytopic/wildcardtest/test123", "This is a message sent 5 seconds later");
+    // });
 }
 
 void loop()
 {
-    getTrans();
+    // getTrans();
+    client.loop();
     delay(1000);
 
     if (linkSerial.available())
@@ -96,23 +135,33 @@ void loop()
     // unsigned int Liter = 0;
     // Liter = Luas - (P * L * distance)
 
-    String httpRequestMesin, isi, indikator;
-    indikator = ind;
+    String httpRequestMesin, isi, id_mesin, status;
+    id_mesin = "proto";
+    status = "belum di hitung";
+    const char *statuss = 'belum di hitung';
     isi = distance;
-    httpRequestMesin = "isi=" + isi + "&indikator=" + indikator;
+    // httpRequestMesin = "isi=" + isi + "&id_mesin=" + id_mesin + "&status" + status;
 
-    HTTPClient httpMp; //Declare object of class HTTPClient
+    JSONVar doc;
+    doc["id_mesin"] = id_mesin;
+    doc["status"] = statuss;
+    doc["isi"] = isi;
 
-    httpMp.begin(serverPostMesin);                                         //Specify request destination
-    httpMp.addHeader("Content-Type", "application/x-www-form-urlencoded"); //Specify content-type header
+    String jsonString = JSON.stringify(doc);
+    client.publish("arSpairum", jsonString.c_str());
 
-    int httpCode3 = httpMp.POST(httpRequestMesin); //Send the request
-    String payload3 = httpMp.getString();          //Get the response payload
+    // HTTPClient httpMp; //Declare object of class HTTPClient
 
-    Serial.println(httpCode3); //Print HTTP return code
-    Serial.println(payload3);  //Print request response payload
+    // httpMp.begin(serverPostMesin);                                         //Specify request destination
+    // httpMp.addHeader("Content-Type", "application/x-www-form-urlencoded"); //Specify content-type header
 
-    httpMp.end(); //Close connection
+    // int httpCode3 = httpMp.POST(httpRequestMesin); //Send the request
+    // String payload3 = httpMp.getString();          //Get the response payload
+
+    // Serial.println(httpCode3); //Print HTTP return code
+    // Serial.println(payload3);  //Print request response payload
+
+    // httpMp.end(); //Close connection
 
     delay(1000);
     digitalWrite(Led_OnBoard, LOW);
