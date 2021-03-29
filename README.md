@@ -24,3 +24,10 @@ Log Catatan perubahan dan pengembangan software hadware stasiun pengisin air min
 
 - Push API to Mqtt
 - Status Isi spairum denagn Mqtt
+
+## [v2.2.3] 29-3-2021
+
+### Fixed
+
+- Merapikan codingan
+- Non aktif LED

@@ -43,9 +43,11 @@ int data1;
 void setup()
 {
     // put your setup code here, to run once:
-    delay(1000);
     pinMode(Led_OnBoard, OUTPUT);
-    pinMode(0, INPUT); // LDR
+    digitalWrite(Led_OnBoard, LOW);
+    delay(2000);
+    digitalWrite(Led_OnBoard, HIGH);
+    delay(2000);
 
     Serial.begin(115200);
     linkSerial.begin(115200);
@@ -60,10 +62,6 @@ void setup()
     Serial.println("");
     Serial.print("Connected to WiFi network with IP Address: ");
     Serial.println(WiFi.localIP());
-    digitalWrite(Led_OnBoard, LOW);
-    delay(2000);
-    digitalWrite(Led_OnBoard, HIGH);
-    delay(2000);
     StaticJsonDocument<500> doc;
 
     client.enableDebuggingMessages();                           // Enable debugging messages sent to serial output
@@ -96,8 +94,7 @@ void loop()
 {
     // getTrans();
     client.loop();
-    delay(1000);
-
+    digitalWrite(Led_OnBoard, LOW);
     if (linkSerial.available())
     {
         // This one must be bigger than for the sender because it must store the strings
@@ -138,34 +135,17 @@ void loop()
     String httpRequestMesin, isi, id_mesin, status;
     id_mesin = "proto";
     status = "belum di hitung";
-    const char *statuss = 'belum di hitung';
     isi = distance;
-    // httpRequestMesin = "isi=" + isi + "&id_mesin=" + id_mesin + "&status" + status;
 
     JSONVar doc;
     doc["id_mesin"] = id_mesin;
-    doc["status"] = statuss;
+    doc["status"] = status;
     doc["isi"] = isi;
 
     String jsonString = JSON.stringify(doc);
     client.publish("arSpairum", jsonString.c_str());
 
-    // HTTPClient httpMp; //Declare object of class HTTPClient
-
-    // httpMp.begin(serverPostMesin);                                         //Specify request destination
-    // httpMp.addHeader("Content-Type", "application/x-www-form-urlencoded"); //Specify content-type header
-
-    // int httpCode3 = httpMp.POST(httpRequestMesin); //Send the request
-    // String payload3 = httpMp.getString();          //Get the response payload
-
-    // Serial.println(httpCode3); //Print HTTP return code
-    // Serial.println(payload3);  //Print request response payload
-
-    // httpMp.end(); //Close connection
-
     delay(1000);
-    digitalWrite(Led_OnBoard, LOW);
-    delay(2000);
     digitalWrite(Led_OnBoard, HIGH);
 }
 
