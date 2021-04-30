@@ -31,3 +31,10 @@ Log Catatan perubahan dan pengembangan software hadware stasiun pengisin air min
 
 - Merapikan codingan
 - Non aktif LED
+
+## [v2.2.4] 30-4-2021
+
+### Fixed
+
+- Update model
+- Clean data

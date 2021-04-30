@@ -1,7 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClient.h>
-
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include <DNSServer.h>
@@ -9,20 +8,18 @@
 
 #include <ArduinoJson.h>
 #include <Arduino_JSON.h>
-
-#include <SoftwareSerial.h>
-#include <Wire.h>
-
 #include <PubSubClient.h>
 #include "EspMQTTClient.h"
+#include <SoftwareSerial.h>
+#include <Wire.h>
 
 int Led_OnBoard = 2;
 const char *serverPost = "http://app.spairum.my.id/transfer/post/proto";
 const char *serverGet = "http://app.spairum.my.id/transfer/get/proto";
 // const char *serverPostMesin = "http://app.spairum.my.id/mesin/edit/proto";
 
-#define echoPin D4 // attach pin D2 Arduino to pin Echo of HC-SR04
-#define trigPin D3 //attach pin D3 Arduino to pin Trig of HC-SR04
+#define echoPin 0 // attach pin D3 Arduino to pin Echo of HC-SR04
+#define trigPin 1 //attach pin D4 Arduino to pin Trig of HC-SR04
 
 // defines variables
 long duration; // variable for the duration of sound wave travel
@@ -35,7 +32,7 @@ EspMQTTClient client(
     1883,               // The MQTT port, default to 1883. this line can be omitted
     "spairum",          // Can be omitted if not needed MQTTUsername
     "broker",           // Can be omitted if not needed MQTTPassword
-    "TestClient"        // Client name that uniquely identify your device
+    "Prototipe"         // Client name that uniquely identify your device
 );
 
 int data1;
@@ -43,13 +40,14 @@ int data1;
 void setup()
 {
     // put your setup code here, to run once:
+    Serial.begin(115200); //115200
+    Serial.println("Restart...");
     pinMode(Led_OnBoard, OUTPUT);
     digitalWrite(Led_OnBoard, LOW);
     delay(2000);
     digitalWrite(Led_OnBoard, HIGH);
     delay(2000);
 
-    Serial.begin(115200);
     linkSerial.begin(115200);
     pinMode(trigPin, OUTPUT); // Sets the trigPin as an OUTPUT
     pinMode(echoPin, INPUT);  // Sets the echoPin as an INPUT
@@ -75,14 +73,29 @@ void onConnectionEstablished()
     client.subscribe("arSpairumRX", [](const String &payload) {
         Serial.println(payload);
     });
+    client.subscribe("Web", [](const String &payload) {
+        Serial.println(payload);
+        StaticJsonDocument<64> doc;
 
-    //  // Subscribe to "mytopic/wildcardtest/#" and display received message to Serial
-    //  client.subscribe("mytopic/wildcardtest/#", [](const String & topic, const String & payload) {
-    //    Serial.println("(From wildcard) topic: " + topic + ", payload: " + payload);
-    //  });
+        DeserializationError error = deserializeJson(doc, payload);
+
+        if (error)
+        {
+            Serial.print(F("deserializeJson() failed: "));
+            //            Serial.println(error.f_str());
+            return;
+        }
+
+        const char *id = doc["id"];     // "proto"
+        const char *akun = doc["akun"]; // "Admin"
+        if (id = "proto")
+        {
+            Serial.println(akun);
+        };
+    });
 
     // Publish a message to "mytopic/test"
-    client.publish("arSpairum", "Spairum proto connect"); // You can activate the retain flag by setting the third parameter to true
+    // client.publish("arSpairum", "Spairum proto connect"); // You can activate the retain flag by setting the third parameter to true
 
     // Execute delayed instructions
     // client.executeDelayed(5 * 1000, []() {
@@ -92,9 +105,9 @@ void onConnectionEstablished()
 
 void loop()
 {
-    // getTrans();
+
     client.loop();
-    digitalWrite(Led_OnBoard, LOW);
+    digitalWrite(Led_OnBoard, HIGH);
     if (linkSerial.available())
     {
         // This one must be bigger than for the sender because it must store the strings
@@ -131,6 +144,7 @@ void loop()
     // Mehitung Ketingan dan volume
     // unsigned int Liter = 0;
     // Liter = Luas - (P * L * distance)
+    Serial.println(distance);
 
     String httpRequestMesin, isi, id_mesin, status;
     id_mesin = "proto";
@@ -145,8 +159,9 @@ void loop()
     String jsonString = JSON.stringify(doc);
     client.publish("arSpairum", jsonString.c_str());
 
-    delay(1000);
-    digitalWrite(Led_OnBoard, HIGH);
+    // delay(1000);
+    digitalWrite(Led_OnBoard, LOW);
+    getTrans();
 }
 
 void getTrans()
