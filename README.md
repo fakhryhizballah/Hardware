@@ -38,3 +38,8 @@ Log Catatan perubahan dan pengembangan software hadware stasiun pengisin air min
 
 - Update model
 - Clean data
+
+### Added
+
+- New Project Recoun_esp
+- Fix Bug, Terminal Serial.print tidak tampil.
